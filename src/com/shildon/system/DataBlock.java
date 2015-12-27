@@ -22,6 +22,7 @@ public final class DataBlock implements Serializable {
 	// 具体数据
 	private transient byte[] data;
 
+	/* ==================== getter and setter ==================== */
 	public String getDataNodeId() {
 		return dataNodeId;
 	}

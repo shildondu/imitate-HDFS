@@ -56,6 +56,7 @@ public final class DataNode {
 		}
 	}
 
+	/* ==================== getter and setter ==================== */
 	public String getDataNodeId() {
 		return dataNodeId;
 	}

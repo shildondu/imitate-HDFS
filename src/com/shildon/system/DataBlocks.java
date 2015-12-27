@@ -18,6 +18,7 @@ public final class DataBlocks implements Serializable {
 	// 副本数据块
 	private DataBlock[] replications;
 
+	/* ==================== getter and setter ==================== */
 	public DataBlock getMainDataBlock() {
 		return mainDataBlock;
 	}

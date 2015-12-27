@@ -27,6 +27,7 @@ public final class FileControllBlock implements Serializable {
 		dataBlocks = new LinkedList<DataBlocks>();
 	}
 
+	/* ==================== getter and setter ==================== */
 	public String getNamespace() {
 		return namespace;
 	}

@@ -39,6 +39,7 @@ public final class NameNode {
 		index = 0;
 	}
 	
+	// 工厂方法
 	public static NameNode getInstance(String fcbPath, int size,
 			List<DataNode> dataNodes) {
 		if (null != fcbPath && !"".equals(fcbPath)) {
@@ -57,6 +58,15 @@ public final class NameNode {
 		return null;
 	}
 	
+	/**
+	 * 保存文件。将文件划分成大小相同（除了最后一块）的数据块，同时按level创建副本，
+	 * 保存到不同的DataNode。
+	 * @param namespace 文件的命名空间
+	 * @param name 文件名
+	 * @param inputStream 文件输入流
+	 * @param level 安全系数，即创建副本个数
+	 * @return
+	 */
 	public boolean saveFile(String namespace, String name, 
 			InputStream inputStream, int level) {
 		FileControllBlock fcb = new FileControllBlock();
@@ -102,6 +112,10 @@ public final class NameNode {
 		}
 	}
 	
+	/**
+	 * 保存fcb。
+	 * @param fcb
+	 */
 	@SuppressWarnings("unchecked")
 	private void saveFcb(FileControllBlock fcb) {
 		ensure();
@@ -134,6 +148,12 @@ public final class NameNode {
 		return tindex;
 	}
 	
+	/**
+	 * 分配算法，将数据块分配到不同的DataNode，默认是循环分配。
+	 * @param data
+	 * @param level
+	 * @return
+	 */
 	private DataBlocks allocate(byte[] data, int level) {
 		// 处理数据块
 		DataBlock dataBlock = new DataBlock();
