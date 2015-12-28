@@ -24,21 +24,40 @@ public final class DataNode {
 	}
 	
 	/**
-	 * 存储数据块。
+	 * 找到数据块的数据，并存储在DataBlock中。
 	 * @param dataBlock
-	 * @return
 	 */
-	public long save(DataBlock dataBlock) {
+	public void find(DataBlock dataBlock) {
 		ensure();
-		try (RandomAccessFile raf = new RandomAccessFile(dataNodeId, "rw")) {
-			raf.seek(position);
-			raf.write(dataBlock.getData());
-			position = raf.getFilePointer();
+		try (RandomAccessFile raf = new RandomAccessFile(dataNodeId, "r")) {
+			byte[] data = new byte[(int) dataBlock.getLength()];
+			raf.seek(dataBlock.getPosition());
+			raf.read(data);
+			dataBlock.setData(data);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return position;
+	}
+	
+	/**
+	 * 存储数据块。
+	 * @param dataBlock
+	 * @return
+	 */
+	public void save(DataBlock dataBlock) {
+		ensure();
+		long oldPosition = position;
+		dataBlock.setPosition(position);
+		try (RandomAccessFile raf = new RandomAccessFile(dataNodeId, "rw")) {
+			raf.seek(position);
+			raf.write(dataBlock.getData());
+			position = raf.getFilePointer();
+			dataBlock.setLength(position - oldPosition);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/**

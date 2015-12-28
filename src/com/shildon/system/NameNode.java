@@ -1,5 +1,7 @@
 package com.shildon.system;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,7 +56,72 @@ public final class NameNode {
 		return NAME_NODE;
 	}
 	
-	public InputStream openFile() {
+	public InputStream openFile(String namespace, String name) {
+		List<FileControllBlock> fcbs = getFcbs();
+		List<DataBlocks> dataBlocks = null;
+		for (FileControllBlock fcb : fcbs) {
+			if (namespace.equals(fcb.getNamespace()) &&
+					name.equals(fcb.getName())) {
+				dataBlocks = fcb.getDataBlocks();
+			}
+		}
+		
+		if (null == dataBlocks) {
+			// TODO Auto-generated catch block
+		}
+		return scatter(dataBlocks);
+	}
+	
+	/**
+	 * 收集数据块
+	 * @return
+	 */
+	private InputStream scatter(List<DataBlocks> dataBlocks) {
+		ByteArrayInputStream inputStream = null;
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+		for (DataBlocks blocks : dataBlocks) {
+			DataBlock dataBlock = blocks.getMainDataBlock();
+			DataNode dataNode = findDataNode(dataBlock.getDataNodeId());
+			dataNode.find(dataBlock);
+
+			try {
+				outputStream.write(dataBlock.getData());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+
+				// 保证容错性，出错时寻找副本
+				DataBlock[] replications = blocks.getReplications();
+				for (DataBlock replication : replications) {
+					DataNode tDataNode = findDataNode(replication.getDataNodeId());
+					tDataNode.find(replication);
+
+					try {
+						outputStream.write(replication.getData());
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+		}
+		
+		inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+		return inputStream;
+	}
+	
+	/**
+	 * 找到DataBlock对应的DataNode
+	 * @param dataBlock
+	 * @return
+	 */
+	private DataNode findDataNode(String dataNodeId) {
+		for (DataNode dataNode : dataNodes) {
+			if (dataNode.getDataNodeId().equals(dataNodeId)) {
+				return dataNode;
+			}
+		}
 		return null;
 	}
 	
@@ -112,21 +179,26 @@ public final class NameNode {
 		}
 	}
 	
-	/**
-	 * 保存fcb。
-	 * @param fcb
-	 */
 	@SuppressWarnings("unchecked")
-	private void saveFcb(FileControllBlock fcb) {
-		ensure();
+	private List<FileControllBlock> getFcbs() {
 		List<FileControllBlock> fcbs = null;
 		try (ObjectInputStream ois = 
 				new ObjectInputStream(new FileInputStream(fcbPath))) {
 			fcbs = (List<FileControllBlock>) ois.readObject();
-			fcbs.add(fcb);
 		} catch (ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}
+		return fcbs;
+	}
+	
+	/**
+	 * 保存fcb。
+	 * @param fcb
+	 */
+	private void saveFcb(FileControllBlock fcb) {
+		ensure();
+		List<FileControllBlock> fcbs = getFcbs();
+		fcbs.add(fcb);
 		// 读写流必须要分开，否则会报EOF异常。
 		try (ObjectOutputStream oos = 
 				new ObjectOutputStream(new FileOutputStream(fcbPath))) {
@@ -158,19 +230,17 @@ public final class NameNode {
 		// 处理数据块
 		DataBlock dataBlock = new DataBlock();
 		dataBlock.setData(data);
-		dataBlock.setLength(data.length);
 		DataNode dataNode = dataNodes.get(getIndex());
-		dataBlock.setPosition(dataNode.save(dataBlock));
 		dataBlock.setDataNodeId(dataNode.getDataNodeId());
+		dataNode.save(dataBlock);
 		// 处理副本
 		DataBlock[] replications = new DataBlock[level];
 		for (int i = 0; i < level; i++) {
 			DataBlock replication = new DataBlock();
 			DataNode dn = dataNodes.get(getIndex());
 			replication.setData(data);
-			replication.setLength(data.length);
-			replication.setPosition(dn.save(replication));
 			replication.setDataNodeId(dn.getDataNodeId());
+			dn.save(replication);
 			replications[i] = replication;
 		}
 		
