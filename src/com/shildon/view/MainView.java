@@ -25,6 +25,12 @@ import javax.swing.JTextField;
 import com.shildon.system.DataNode;
 import com.shildon.system.NameNode;
 
+/**
+ * 主视图。
+ * @author shildon<shildondu@gmail.com>
+ * @date Dec 30, 2015 9:57:49 PM
+ *
+ */
 public class MainView extends JFrame {
 
 	/**
@@ -52,6 +58,7 @@ public class MainView extends JFrame {
 		init();
 	}
 	
+	// 默认设置
 	private void defaultSetting() {
 		int screenx = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth();
 		int screeny = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight();
@@ -65,6 +72,7 @@ public class MainView extends JFrame {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 	}
 		
+	// 初始化
 	private void init() {
 		DataNode dataNode0 = new DataNode("/home/shildon/Downloads/node0.txt");
 		DataNode dataNode1 = new DataNode("/home/shildon/Downloads/node1.txt");
@@ -125,6 +133,7 @@ public class MainView extends JFrame {
 		addActionListener();
 	}
 	
+	// 添加监听器
 	private void addActionListener() {
 		saveFileButton.addActionListener(new ActionListener() {
 			
