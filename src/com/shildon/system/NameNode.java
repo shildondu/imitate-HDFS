@@ -27,8 +27,11 @@ public final class NameNode {
 	
 	// 默认fcb文件存放路径
 	private String fcbPath;
-	// 数据块的大小，单位是字节,默认是4kb
+	// 文件控制块
+	private List<FileControllBlock> fcbs;
+	// 切分的数据块的大小，单位是字节,默认是4kb
 	private int size;
+	// 数据节点
 	private List<DataNode> dataNodes;
 	// dataNodes的索引
 	private int index;
@@ -57,7 +60,7 @@ public final class NameNode {
 	}
 	
 	public InputStream openFile(String namespace, String name) {
-		List<FileControllBlock> fcbs = getFcbs();
+		readFcbs();
 		List<DataBlocks> dataBlocks = null;
 		for (FileControllBlock fcb : fcbs) {
 			if (namespace.equals(fcb.getNamespace()) &&
@@ -83,9 +86,9 @@ public final class NameNode {
 		for (DataBlocks blocks : dataBlocks) {
 			DataBlock dataBlock = blocks.getMainDataBlock();
 			DataNode dataNode = findDataNode(dataBlock.getDataNodeId());
-			dataNode.find(dataBlock);
 
 			try {
+				dataNode.find(dataBlock);
 				outputStream.write(dataBlock.getData());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -95,13 +98,15 @@ public final class NameNode {
 				DataBlock[] replications = blocks.getReplications();
 				for (DataBlock replication : replications) {
 					DataNode tDataNode = findDataNode(replication.getDataNodeId());
-					tDataNode.find(replication);
 
 					try {
+						tDataNode.find(replication);
 						outputStream.write(replication.getData());
+						break;
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
+						continue;
 					}
 				}
 			}
@@ -180,15 +185,13 @@ public final class NameNode {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private List<FileControllBlock> getFcbs() {
-		List<FileControllBlock> fcbs = null;
+	private void readFcbs() {
 		try (ObjectInputStream ois = 
 				new ObjectInputStream(new FileInputStream(fcbPath))) {
 			fcbs = (List<FileControllBlock>) ois.readObject();
 		} catch (ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}
-		return fcbs;
 	}
 	
 	/**
@@ -197,7 +200,7 @@ public final class NameNode {
 	 */
 	private void saveFcb(FileControllBlock fcb) {
 		ensure();
-		List<FileControllBlock> fcbs = getFcbs();
+		readFcbs();
 		fcbs.add(fcb);
 		// 读写流必须要分开，否则会报EOF异常。
 		try (ObjectOutputStream oos = 

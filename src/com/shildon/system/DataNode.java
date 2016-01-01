@@ -26,18 +26,15 @@ public final class DataNode {
 	/**
 	 * 找到数据块的数据，并存储在DataBlock中。
 	 * @param dataBlock
+	 * @throws IOException 
 	 */
-	public void find(DataBlock dataBlock) {
-		ensure();
-		try (RandomAccessFile raf = new RandomAccessFile(dataNodeId, "r")) {
-			byte[] data = new byte[(int) dataBlock.getLength()];
-			raf.seek(dataBlock.getPosition());
-			raf.read(data);
-			dataBlock.setData(data);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void find(DataBlock dataBlock) throws IOException {
+		RandomAccessFile raf = new RandomAccessFile(dataNodeId, "r");
+		byte[] data = new byte[(int) dataBlock.getLength()];
+		raf.seek(dataBlock.getPosition());
+		raf.read(data);
+		dataBlock.setData(data);
+		raf.close();
 	}
 	
 	/**
